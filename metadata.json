@@ -1,0 +1,6 @@
+{
+  "name": "Receipt Maker",
+  "description": "Create, customize, and export professional receipts with customizable logos, templates, payment message presets, and history tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
