@@ -8,6 +8,13 @@ export interface ExportResult {
   error?: string;
 }
 
+export interface ReceiptImageData {
+  dataUrl: string;
+  blob: Blob;
+  fileName: string;
+  file: File;
+}
+
 /**
  * Capture receipt DOM element as HTMLCanvasElement
  */
@@ -44,6 +51,73 @@ async function captureReceiptCanvas(elementId: string): Promise<HTMLCanvasElemen
 }
 
 /**
+ * Generate high-res image data and blob for modal preview and saving
+ */
+export async function generateReceiptImageData(
+  elementId: string,
+  receipt: ReceiptData
+): Promise<ReceiptImageData> {
+  const canvas = await captureReceiptCanvas(elementId);
+  if (!canvas) throw new Error('Could not capture receipt canvas');
+
+  const fileName = `receipt-${receipt.receiptNumber || 'slip'}.png`;
+  const dataUrl = canvas.toDataURL('image/png');
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (b) resolve(b);
+      else reject(new Error('Failed to create image blob'));
+    }, 'image/png');
+  });
+
+  const file = new File([blob], fileName, { type: 'image/png' });
+
+  return {
+    dataUrl,
+    blob,
+    fileName,
+    file,
+  };
+}
+
+/**
+ * Trigger native mobile share sheet to save directly to Camera Roll / Photos
+ */
+export async function shareReceiptImage(
+  file: File,
+  receipt: ReceiptData
+): Promise<{ shared: boolean; error?: string }> {
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: `Receipt - ${receipt.companyName || 'Receipt'}`,
+        text: `Receipt ${receipt.receiptNumber} from ${receipt.companyName || 'Receipt'}`,
+        files: [file],
+      });
+      return { shared: true };
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return { shared: false };
+      }
+      return { shared: false, error: err?.message || 'Share cancelled' };
+    }
+  }
+  return { shared: false, error: 'Direct sharing not supported on this browser' };
+}
+
+/**
+ * Trigger direct file download
+ */
+export function triggerImageDownload(dataUrl: string, fileName: string) {
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = dataUrl;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
  * Export receipt as an Image (PNG) directly to phone/computer download or Web Share
  */
 export async function exportReceiptAsImage(
@@ -52,30 +126,18 @@ export async function exportReceiptAsImage(
   tryShareSheet = false
 ): Promise<ExportResult> {
   try {
-    const canvas = await captureReceiptCanvas(elementId);
-    if (!canvas) throw new Error('Could not capture receipt canvas');
-
-    const fileName = `receipt-${receipt.receiptNumber || 'slip'}.png`;
+    const { file, dataUrl, fileName } = await generateReceiptImageData(elementId, receipt);
 
     // If on a mobile device and user requested share or share is available
-    if (tryShareSheet && navigator.canShare) {
+    if (tryShareSheet && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        const blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, 'image/png')
-        );
-        if (blob) {
-          const file = new File([blob], fileName, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: `Receipt - ${receipt.companyName}`,
-              text: `Receipt ${receipt.receiptNumber} from ${receipt.companyName}`,
-              files: [file],
-            });
-            return { success: true, message: 'Shared receipt image successfully!' };
-          }
-        }
+        await navigator.share({
+          title: `Receipt - ${receipt.companyName || 'Receipt'}`,
+          text: `Receipt ${receipt.receiptNumber} from ${receipt.companyName || 'Receipt'}`,
+          files: [file],
+        });
+        return { success: true, message: 'Shared receipt image successfully!' };
       } catch (shareErr) {
-        // User may cancel share sheet, fallback to direct download
         if ((shareErr as Error).name === 'AbortError') {
           return { success: true, message: 'Share dismissed' };
         }
@@ -83,15 +145,9 @@ export async function exportReceiptAsImage(
     }
 
     // Direct image download
-    const dataUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    triggerImageDownload(dataUrl, fileName);
 
-    return { success: true, message: 'Image downloaded to your device!' };
+    return { success: true, message: 'Image downloaded to your device files!' };
   } catch (err: any) {
     console.error('Failed to export image:', err);
     return { success: false, error: err?.message || 'Failed to export image' };

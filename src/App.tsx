@@ -4,7 +4,13 @@ import { INITIAL_RECEIPT, createBlankReceipt } from './utils/presets';
 import { ReceiptPreview } from './components/ReceiptPreview';
 import { ReceiptForm } from './components/ReceiptForm';
 import { ReceiptHistoryModal } from './components/ReceiptHistoryModal';
-import { exportReceiptAsImage, exportReceiptAsPDF } from './utils/exportHelpers';
+import { ImageExportModal } from './components/ImageExportModal';
+import {
+  exportReceiptAsPDF,
+  generateReceiptImageData,
+  ReceiptImageData,
+  shareReceiptImage,
+} from './utils/exportHelpers';
 import {
   Receipt,
   Download,
@@ -21,6 +27,7 @@ import {
   AlertCircle,
   PlusCircle,
   RotateCcw,
+  Camera,
 } from 'lucide-react';
 
 const STORAGE_KEY_CURRENT = 'receipt_maker_current_v3';
@@ -64,6 +71,8 @@ export default function App() {
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportImageData, setExportImageData] = useState<ReceiptImageData | null>(null);
+  const [isImageExportModalOpen, setIsImageExportModalOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
@@ -119,21 +128,27 @@ export default function App() {
     showToast('Saved to history log!');
   };
 
-  // Export as Image (Picture on phone / download)
+  // Export as Image (Open photo save modal for Camera Roll / Files)
   const handleExportImage = async (tryShare = false) => {
     setIsExporting(true);
-    showToast('Preparing high-res receipt picture...', 'info');
+    showToast('Rendering high-res receipt picture...', 'info');
 
     // Auto save to history on export
     handleSaveToHistory();
 
-    const res = await exportReceiptAsImage('receipt-print-area', receipt, tryShare);
-    setIsExporting(false);
+    try {
+      const imgData = await generateReceiptImageData('receipt-print-area', receipt);
+      setExportImageData(imgData);
+      setIsImageExportModalOpen(true);
+      setIsExporting(false);
 
-    if (res.success) {
-      showToast(res.message || 'Picture exported to your device!');
-    } else {
-      showToast(res.error || 'Failed to export picture', 'info');
+      if (tryShare) {
+        await shareReceiptImage(imgData.file, receipt);
+      }
+    } catch (err: any) {
+      setIsExporting(false);
+      console.error('Failed to export image:', err);
+      showToast(err?.message || 'Failed to render picture', 'info');
     }
   };
 
@@ -372,10 +387,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleExportImage(false)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-lg transition-colors flex items-center gap-1.5"
                 >
-                  <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
-                  Save Picture
+                  <Camera className="w-3.5 h-3.5 text-indigo-600" />
+                  Save to Photos
                 </button>
 
                 <button
@@ -400,13 +415,22 @@ export default function App() {
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Phone & Print Ready
               </p>
               <p className="text-[11px] leading-relaxed">
-                Tapping <strong>Save Picture</strong> exports a high-DPI image directly saved to your phone library or downloads folder.
+                Tap <strong>Save to Photos</strong> to add the receipt to your phone&apos;s Camera Roll or download the PNG file.
                 Receipts are automatically logged in your <strong>History</strong>.
               </p>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Camera Roll / Photo Export Modal */}
+      <ImageExportModal
+        isOpen={isImageExportModalOpen}
+        onClose={() => setIsImageExportModalOpen(false)}
+        imageData={exportImageData}
+        receipt={receipt}
+        onShowToast={showToast}
+      />
 
       {/* History Log Modal */}
       <ReceiptHistoryModal
