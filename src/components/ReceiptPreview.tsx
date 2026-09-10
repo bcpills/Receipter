@@ -62,10 +62,20 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
             <span className="text-gray-500">RECEIPT #:</span>
             <span className="font-bold">{receipt.receiptNumber}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">DATE & TIME:</span>
-            <span>{receipt.date} {receipt.time}</span>
-          </div>
+          {(receipt.date || receipt.time) && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">
+                {receipt.date && receipt.time
+                  ? 'DATE & TIME:'
+                  : receipt.time
+                  ? 'TIME:'
+                  : 'DATE:'}
+              </span>
+              <span>
+                {[receipt.date, receipt.time].filter(Boolean).join(' ')}
+              </span>
+            </div>
+          )}
           {receipt.customerName && (
             <div className="flex justify-between">
               <span className="text-gray-500">CUSTOMER:</span>
@@ -260,8 +270,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
             )}
           </div>
           <div className="text-right">
-            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Date & Payment</span>
-            <p className="font-medium text-slate-800 mt-0.5">{receipt.date}</p>
+            <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+              {receipt.date || receipt.time ? (receipt.time ? 'Date & Time' : 'Date') : 'Payment'}
+            </span>
+            {(receipt.date || receipt.time) && (
+              <p className="font-medium text-slate-800 mt-0.5">
+                {[receipt.date, receipt.time].filter(Boolean).join(' ')}
+              </p>
+            )}
             <p className="text-slate-500 text-[11px]">{receipt.paymentMethod}</p>
           </div>
         </div>
@@ -396,10 +412,16 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
             <span className="text-stone-400 block text-[10px] uppercase tracking-wider">Receipt No.</span>
             <span className="font-medium text-stone-800">{receipt.receiptNumber}</span>
           </div>
-          <div className="text-right">
-            <span className="text-stone-400 block text-[10px] uppercase tracking-wider">Date</span>
-            <span className="font-medium text-stone-800">{receipt.date}</span>
-          </div>
+          {(receipt.date || receipt.time) && (
+            <div className="text-right">
+              <span className="text-stone-400 block text-[10px] uppercase tracking-wider">
+                {receipt.time ? 'Date & Time' : 'Date'}
+              </span>
+              <span className="font-medium text-stone-800">
+                {[receipt.date, receipt.time].filter(Boolean).join(' ')}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Items */}
@@ -518,9 +540,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
             <span className="text-[10px] font-semibold text-slate-400 uppercase">Customer</span>
             <p className="font-semibold text-slate-800 mt-0.5">{receipt.customerName || 'Cash Client'}</p>
             <p className="text-slate-500 text-[11px]">{receipt.customerContact}</p>
-            <div className="mt-2 text-slate-600 text-[11px]">
-              <span className="font-medium">Date: </span>{receipt.date}
-            </div>
+            {(receipt.date || receipt.time) && (
+              <div className="mt-2 text-slate-600 text-[11px]">
+                <span className="font-medium">
+                  {receipt.time ? 'Date & Time: ' : 'Date: '}
+                </span>
+                {[receipt.date, receipt.time].filter(Boolean).join(' ')}
+              </div>
+            )}
           </div>
         </div>
 
@@ -628,10 +655,14 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
           <span>Receipt No.</span>
           <span className="font-mono font-bold text-black">{receipt.receiptNumber}</span>
         </div>
-        <div className="flex justify-between">
-          <span>Date</span>
-          <span className="text-black">{receipt.date}</span>
-        </div>
+        {(receipt.date || receipt.time) && (
+          <div className="flex justify-between">
+            <span>{receipt.time ? 'Date & Time' : 'Date'}</span>
+            <span className="text-black">
+              {[receipt.date, receipt.time].filter(Boolean).join(' ')}
+            </span>
+          </div>
+        )}
         {receipt.customerName && (
           <div className="flex justify-between">
             <span>Customer</span>

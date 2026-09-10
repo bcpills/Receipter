@@ -155,10 +155,12 @@ export const ReceiptHistoryModal: React.FC<ReceiptHistoryModalProps> = ({
                         {item.companyName || 'Company'}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {item.date} {item.time}
-                        </span>
+                        {(item.date || item.time) && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {[item.date, item.time].filter(Boolean).join(' ')}
+                          </span>
+                        )}
                         {item.customerName && (
                           <span>To: {item.customerName}</span>
                         )}

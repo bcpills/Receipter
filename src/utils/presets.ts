@@ -68,8 +68,8 @@ export const createBlankReceipt = (): ReceiptData => {
   return {
     id: 'rcpt_' + Date.now(),
     receiptNumber: `REC-${dateYear}-${randomDigits}`,
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    date: '',
+    time: '',
 
     companyName: '',
     companyTagline: '',

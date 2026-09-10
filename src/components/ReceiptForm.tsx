@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   Info,
   Layers,
+  Clock,
 } from 'lucide-react';
 
 interface ReceiptFormProps {
@@ -78,7 +79,9 @@ export const ReceiptForm: React.FC<ReceiptFormProps> = ({
     receipt.customerContact?.trim() ||
     receipt.notes?.trim() ||
     receipt.discountAmount > 0 ||
-    receipt.paymentMethod !== 'Credit Card'
+    receipt.paymentMethod !== 'Credit Card' ||
+    receipt.date?.trim() ||
+    receipt.time?.trim()
   );
 
   // Handle changing total in simple mode
@@ -407,7 +410,7 @@ export const ReceiptForm: React.FC<ReceiptFormProps> = ({
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Receipt Number */}
                   <div>
                     <label className="text-[11px] font-semibold text-slate-700 block mb-1 flex items-center justify-between">
@@ -429,15 +432,74 @@ export const ReceiptForm: React.FC<ReceiptFormProps> = ({
                     />
                   </div>
 
-                  {/* Date */}
+                  {/* Date (Optional) */}
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                      Date
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1 flex items-center justify-between">
+                      <span>Date (Optional)</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => updateField('date', new Date().toISOString().split('T')[0])}
+                          className="text-indigo-600 hover:text-indigo-800 text-[10px] font-medium"
+                          title="Set to today"
+                        >
+                          Today
+                        </button>
+                        {receipt.date && (
+                          <button
+                            type="button"
+                            onClick={() => updateField('date', '')}
+                            className="text-slate-400 hover:text-red-600 text-[10px]"
+                            title="Clear date"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
                     </label>
                     <input
                       type="date"
                       value={receipt.date}
                       onChange={(e) => updateField('date', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Time Stamp (Optional - only if asked) */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1 flex items-center justify-between">
+                      <span>Time Stamp (Optional)</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateField(
+                              'time',
+                              new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            )
+                          }
+                          className="text-indigo-600 hover:text-indigo-800 text-[10px] font-medium flex items-center gap-0.5"
+                          title="Stamp current time"
+                        >
+                          <Clock className="w-2.5 h-2.5" /> Stamp
+                        </button>
+                        {receipt.time && (
+                          <button
+                            type="button"
+                            onClick={() => updateField('time', '')}
+                            className="text-slate-400 hover:text-red-600 text-[10px]"
+                            title="Clear time stamp"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </label>
+                    <input
+                      type="text"
+                      value={receipt.time}
+                      onChange={(e) => updateField('time', e.target.value)}
+                      placeholder="Blank by default"
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                   </div>

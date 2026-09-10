@@ -23,18 +23,16 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-const STORAGE_KEY_CURRENT = 'receipt_maker_current_v2';
-const STORAGE_KEY_HISTORY = 'receipt_maker_history_v2';
+const STORAGE_KEY_CURRENT = 'receipt_maker_current_v3';
+const STORAGE_KEY_HISTORY = 'receipt_maker_history_v3';
 
 export default function App() {
   // Load receipt from localStorage or blank default
   const [receipt, setReceipt] = useState<ReceiptData>(() => {
     try {
       // Clear legacy sample if exists
-      const legacy = localStorage.getItem('receipt_maker_current_v1');
-      if (legacy && legacy.includes('Apex Artisan')) {
-        localStorage.removeItem('receipt_maker_current_v1');
-      }
+      localStorage.removeItem('receipt_maker_current_v1');
+      localStorage.removeItem('receipt_maker_current_v2');
       const saved = localStorage.getItem(STORAGE_KEY_CURRENT);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -183,8 +181,8 @@ export default function App() {
       ...source,
       id: 'rcpt_' + Date.now(),
       receiptNumber: `REC-${new Date().getFullYear()}-${randomDigits}`,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: source.date || '',
+      time: source.time || '',
       createdAt: Date.now(),
     };
     setReceipt(duplicated);
