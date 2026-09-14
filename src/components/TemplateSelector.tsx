@@ -17,18 +17,11 @@ interface TemplateOption {
 
 const TEMPLATES: TemplateOption[] = [
   {
-    id: 'thermal',
-    name: 'Thermal Register Slip',
-    description: 'Classic grocery & retail POS paper receipt with tear edges & barcode',
-    icon: Receipt,
-    tag: 'Popular',
-  },
-  {
     id: 'modern',
-    name: 'Modern Studio',
-    description: 'Crisp contemporary styling with card layout and pill accents',
+    name: 'Modern Studio (Full Graphics)',
+    description: 'Crisp contemporary styling with card layout, status badge & rich formatting',
     icon: FileText,
-    tag: 'Clean',
+    tag: 'Recommended',
   },
   {
     id: 'boutique',
@@ -49,7 +42,14 @@ const TEMPLATES: TemplateOption[] = [
     name: 'Swiss Minimal',
     description: 'High-contrast typography with crisp border rules & understated lines',
     icon: AlignLeft,
-    tag: 'Minimal',
+    tag: 'Clean',
+  },
+  {
+    id: 'thermal',
+    name: 'Thermal Register Slip',
+    description: 'Classic grocery & retail POS paper receipt with tear edges & monospace font',
+    icon: Receipt,
+    tag: 'Retro POS',
   },
 ];
 

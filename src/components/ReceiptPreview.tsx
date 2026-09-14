@@ -354,13 +354,21 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({ receipt }) => {
           </div>
         ) : null}
 
-        {/* Footer info */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <div>
-            {receipt.companyWebsite && <span>{receipt.companyWebsite}</span>}
+        {/* Notes */}
+        {receipt.notes && (
+          <div className="mt-4 p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+            <p className="text-[11px] text-slate-600 italic">
+              {receipt.notes}
+            </p>
           </div>
-          <div className="font-mono text-[10px]">
-            {receipt.receiptNumber}
+        )}
+
+        {/* Barcode & Verified Footer */}
+        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col items-center gap-2">
+          <ReceiptBarcode value={receipt.barcodeValue || receipt.receiptNumber} />
+          <div className="w-full flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+            <span>{receipt.companyWebsite || 'VERIFIED TRANSACTION'}</span>
+            <span>#{receipt.receiptNumber}</span>
           </div>
         </div>
       </div>

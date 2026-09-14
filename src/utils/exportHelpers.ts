@@ -16,7 +16,7 @@ export interface ReceiptImageData {
 }
 
 /**
- * Capture receipt DOM element as HTMLCanvasElement
+ * Capture receipt DOM element as HTMLCanvasElement with full graphics fidelity
  */
 async function captureReceiptCanvas(elementId: string): Promise<HTMLCanvasElement | null> {
   const element = document.getElementById(elementId);
@@ -29,25 +29,58 @@ async function captureReceiptCanvas(elementId: string): Promise<HTMLCanvasElemen
     await document.fonts.ready;
   }
 
-  const canvas = await html2canvas(element, {
-    scale: 2.5, // High resolution for crisp phone & printing quality
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#ffffff',
-    logging: false,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
-    onclone: (clonedDoc) => {
-      // Ensure cloned print container is visible with white background
-      const clonedEl = clonedDoc.getElementById(elementId);
-      if (clonedEl) {
-        clonedEl.style.transform = 'none';
-        clonedEl.style.margin = '0 auto';
-      }
-    },
-  });
+  // Temporarily reveal any hidden ancestors in the live DOM (e.g. mobile tab switching)
+  const hiddenAncestors: { el: HTMLElement; origDisplay: string }[] = [];
+  let curr: HTMLElement | null = element.parentElement;
+  while (curr && curr !== document.body) {
+    const computed = window.getComputedStyle(curr);
+    if (computed.display === 'none') {
+      hiddenAncestors.push({ el: curr, origDisplay: curr.style.display });
+      curr.style.setProperty('display', 'block', 'important');
+    }
+    curr = curr.parentElement;
+  }
 
-  return canvas;
+  try {
+    // Force a DOM layout reflow so the browser computes layout and styles
+    void element.offsetHeight;
+
+    const canvas = await html2canvas(element, {
+      scale: 3, // Ultra-crisp 3x resolution for Retina phones and photo rolls
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 800, // Render at desktop width so Tailwind cards and graphics preserve pristine layout
+      onclone: (clonedDoc) => {
+        const clonedEl = clonedDoc.getElementById(elementId);
+        if (clonedEl) {
+          // Unhide all ancestors in the cloned document
+          let parent = clonedEl.parentElement;
+          while (parent && parent !== clonedDoc.body) {
+            parent.style.setProperty('display', 'block', 'important');
+            parent.style.setProperty('visibility', 'visible', 'important');
+            parent.style.setProperty('opacity', '1', 'important');
+            parent.classList.remove('hidden');
+            parent = parent.parentElement;
+          }
+
+          clonedEl.style.setProperty('display', 'block', 'important');
+          clonedEl.style.setProperty('visibility', 'visible', 'important');
+          clonedEl.style.setProperty('opacity', '1', 'important');
+          clonedEl.style.transform = 'none';
+          clonedEl.style.margin = '0 auto';
+        }
+      },
+    });
+
+    return canvas;
+  } finally {
+    // Restore original visibility on live DOM
+    for (const { el, origDisplay } of hiddenAncestors) {
+      el.style.display = origDisplay;
+    }
+  }
 }
 
 /**

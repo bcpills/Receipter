@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ReceiptData } from '../types';
+import { ReceiptData, ReceiptTemplate } from '../types';
 import { ReceiptImageData, shareReceiptImage, triggerImageDownload } from '../utils/exportHelpers';
 import {
   X,
@@ -11,6 +11,7 @@ import {
   Sparkles,
   Info,
   Camera,
+  Loader2,
 } from 'lucide-react';
 
 interface ImageExportModalProps {
@@ -19,7 +20,17 @@ interface ImageExportModalProps {
   imageData: ReceiptImageData | null;
   receipt: ReceiptData;
   onShowToast: (msg: string, type?: 'success' | 'info') => void;
+  onChangeTemplate?: (template: ReceiptTemplate) => void;
+  isRendering?: boolean;
 }
+
+const TEMPLATE_PILLS: { id: ReceiptTemplate; label: string; highlight?: boolean }[] = [
+  { id: 'modern', label: 'Modern Studio (Full Graphics)', highlight: true },
+  { id: 'boutique', label: 'Artisan Boutique' },
+  { id: 'corporate', label: 'Corporate Invoice' },
+  { id: 'minimal', label: 'Swiss Minimal' },
+  { id: 'thermal', label: 'Thermal Register Slip' },
+];
 
 export function ImageExportModal({
   isOpen,
@@ -27,6 +38,8 @@ export function ImageExportModal({
   imageData,
   receipt,
   onShowToast,
+  onChangeTemplate,
+  isRendering = false,
 }: ImageExportModalProps) {
   const [copied, setCopied] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -113,24 +126,63 @@ export function ImageExportModal({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+          {/* Template Switcher within Modal */}
+          {onChangeTemplate && (
+            <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 sm:p-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                  Receipt Style & Formatting:
+                </span>
+                {isRendering && (
+                  <span className="text-[10px] text-indigo-600 font-medium flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Updating...
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {TEMPLATE_PILLS.map((tmpl) => {
+                  const active = receipt.template === tmpl.id;
+                  return (
+                    <button
+                      key={tmpl.id}
+                      type="button"
+                      onClick={() => onChangeTemplate(tmpl.id)}
+                      disabled={isRendering}
+                      className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition-all flex items-center gap-1 ${
+                        active
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      {tmpl.label}
+                      {tmpl.highlight && !active && (
+                        <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-bold">
+                          Best
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Important Camera Roll Guide Box */}
           <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3 sm:p-3.5 text-amber-900 text-xs">
             <div className="flex items-start gap-2.5">
               <Smartphone className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-amber-950 text-xs">
-                  How to get this photo into your Camera Roll:
+                  How to save directly into your Camera Roll:
                 </p>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Web browsers automatically download files into the <strong>Files / Downloads</strong> app instead of Camera Roll.
-                </p>
-                <div className="pt-1 space-y-1 text-[11px]">
+                <div className="pt-0.5 space-y-1 text-[11px]">
                   <div className="flex items-start gap-1.5 font-medium">
                     <span className="bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
                       Method 1
                     </span>
                     <span>
-                      <strong>Touch & hold (press & hold)</strong> the receipt picture below, then tap <strong>"Save to Photos"</strong>.
+                      <strong>Touch & hold (press & hold)</strong> the receipt picture below, then tap <strong>&quot;Save to Photos&quot;</strong>.
                     </span>
                   </div>
                   <div className="flex items-start gap-1.5 font-medium">
@@ -138,7 +190,7 @@ export function ImageExportModal({
                       Method 2
                     </span>
                     <span>
-                      Tap <strong>"Save to Photos"</strong> below to open your phone's share menu, then select <strong>"Save Image"</strong>.
+                      Tap <strong>&quot;Save to Photos&quot;</strong> below to open your phone&apos;s share menu, then select <strong>&quot;Save Image&quot;</strong>.
                     </span>
                   </div>
                 </div>
@@ -152,7 +204,7 @@ export function ImageExportModal({
             <button
               type="button"
               onClick={handleSaveToPhotos}
-              disabled={isSharing}
+              disabled={isSharing || isRendering}
               className="w-full px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
@@ -163,6 +215,7 @@ export function ImageExportModal({
             <button
               type="button"
               onClick={handleDownloadFile}
+              disabled={isRendering}
               className="w-full px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5 text-slate-600" />
@@ -173,6 +226,7 @@ export function ImageExportModal({
             <button
               type="button"
               onClick={handleCopyImage}
+              disabled={isRendering}
               className="w-full px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
             >
               {copied ? (
@@ -197,16 +251,23 @@ export function ImageExportModal({
               </span>
             </div>
 
-            <div className="bg-slate-100 p-3 sm:p-4 rounded-xl border border-slate-200 flex items-center justify-center overflow-x-auto max-h-[50vh]">
-              <img
-                src={imageData.dataUrl}
-                alt={`Receipt ${receipt.receiptNumber}`}
-                className="max-h-[46vh] max-w-full w-auto object-contain rounded-md shadow-md select-auto cursor-pointer"
-                style={{
-                  WebkitTouchCallout: 'default',
-                  touchAction: 'manipulation',
-                }}
-              />
+            <div className="bg-slate-100 p-3 sm:p-4 rounded-xl border border-slate-200 flex items-center justify-center overflow-x-auto min-h-[220px] max-h-[50vh] relative">
+              {isRendering ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                  <span className="text-xs font-medium">Rendering high-res picture...</span>
+                </div>
+              ) : (
+                <img
+                  src={imageData.dataUrl}
+                  alt={`Receipt ${receipt.receiptNumber}`}
+                  className="max-h-[46vh] max-w-full w-auto object-contain rounded-md shadow-md select-auto cursor-pointer"
+                  style={{
+                    WebkitTouchCallout: 'default',
+                    touchAction: 'manipulation',
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>

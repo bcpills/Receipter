@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ReceiptData } from './types';
+import { ReceiptData, ReceiptTemplate } from './types';
 import { INITIAL_RECEIPT, createBlankReceipt } from './utils/presets';
 import { ReceiptPreview } from './components/ReceiptPreview';
 import { ReceiptForm } from './components/ReceiptForm';
@@ -44,6 +44,10 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.companyName !== 'Apex Artisan Coffee & Goods') {
+          // If the template was previously defaulted to 'thermal', upgrade to 'modern'
+          if (parsed.template === 'thermal') {
+            parsed.template = 'modern';
+          }
           return parsed;
         }
       }
@@ -71,6 +75,7 @@ export default function App() {
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isRenderingTemplate, setIsRenderingTemplate] = useState(false);
   const [exportImageData, setExportImageData] = useState<ReceiptImageData | null>(null);
   const [isImageExportModalOpen, setIsImageExportModalOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
@@ -150,6 +155,29 @@ export default function App() {
       console.error('Failed to export image:', err);
       showToast(err?.message || 'Failed to render picture', 'info');
     }
+  };
+
+  // Switch template from within the modal
+  const handleChangeTemplateInModal = async (newTemplate: ReceiptTemplate) => {
+    if (receipt.template === newTemplate) return;
+    setIsRenderingTemplate(true);
+    const updatedReceipt: ReceiptData = {
+      ...receipt,
+      template: newTemplate,
+    };
+    setReceipt(updatedReceipt);
+
+    // Allow DOM to re-render with the new template
+    setTimeout(async () => {
+      try {
+        const imgData = await generateReceiptImageData('receipt-print-area', updatedReceipt);
+        setExportImageData(imgData);
+      } catch (e) {
+        console.error('Failed to regenerate receipt image for new template', e);
+      } finally {
+        setIsRenderingTemplate(false);
+      }
+    }, 120);
   };
 
   // Export as PDF
@@ -284,10 +312,10 @@ export default function App() {
               type="button"
               onClick={() => handleExportImage(false)}
               disabled={isExporting}
-              className="text-xs font-semibold text-slate-800 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
+              className="text-xs font-semibold text-slate-800 hover:text-indigo-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
             >
-              <ImageIcon className="w-4 h-4 text-blue-600" />
-              <span className="hidden sm:inline">Export</span> Picture
+              <Camera className="w-4 h-4 text-indigo-600" />
+              <span>Save to Photos</span>
             </button>
 
             {/* PDF export */}
@@ -430,6 +458,8 @@ export default function App() {
         imageData={exportImageData}
         receipt={receipt}
         onShowToast={showToast}
+        onChangeTemplate={handleChangeTemplateInModal}
+        isRendering={isRenderingTemplate}
       />
 
       {/* History Log Modal */}

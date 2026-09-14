@@ -94,7 +94,7 @@ export const createBlankReceipt = (): ReceiptData => {
     paymentStatus: 'Paid',
     paymentMessage: '',
 
-    template: 'thermal',
+    template: 'modern',
     accentColor: '#0f172a',
     barcodeValue: `${dateYear}${randomDigits}`,
     notes: '',
